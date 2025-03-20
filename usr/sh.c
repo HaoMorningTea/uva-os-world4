@@ -177,7 +177,7 @@ static int create_dev_procfs(void) {
   int fd; 
 
   // create /proc/xxx with open()
-  if (1) { /* STUDENT_TODO: replace this */
+  if (mkdir("/proc") < 0) { /* STUDENT_TODO: replace this */
     printf("failed to create /proc"); 
     goto mkdev; 
   }
@@ -186,6 +186,13 @@ static int create_dev_procfs(void) {
     if (p->type != TYPE_PROCFS) continue; 
      
     /* STUDENT_TODO: your code here */
+    // The path is already something like "/proc/dispinfo", etc.
+    int fd = open(p->path, O_CREATE | O_RDWR);
+    if (fd < 0) {
+      printf("failed to create %s\n", p->path);
+    } else {
+      close(fd);
+    }
   }
 
   // create /dev/xxx with mknod()
@@ -199,6 +206,11 @@ mkdev:
     if (p->type != TYPE_DEVFS) continue; 
      
     /* STUDENT_TODO: your code here */
+    // p->path is e.g. "/dev/console", p->major is e.g. CONSOLE
+    if (mknod(p->path, p->major, 0) < 0) {
+      printf("failed to mknod %s\n", p->path);
+    }
+
   }
   return 0; 
 }
