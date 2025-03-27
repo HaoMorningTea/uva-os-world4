@@ -220,30 +220,30 @@ void nes_hal_init() {
     // keyboard task, read kb events and writes to pipe
     // cf usertests.c pipe3()
     // quest: mario with inputs
-    if (fork() == 0)  { 
-        close(fds[0]);
-        // open the keyboard device file
-        int events = 0; /* STUDENT_TODO: replace this */
-        assert(events>0);
-        int evtype; unsigned int scancode; 
-        printf("input task running\n");
+    // if (fork() == 0)  { 
+    //     close(fds[0]);
+    //     // open the keyboard device file
+    //     int events = 0; /* STUDENT_TODO: replace this */
+    //     assert(events>0);
+    //     int evtype; unsigned int scancode; 
+    //     printf("input task running\n");
 
-        while (1) {
-            n = read_kb_event(events, &evtype, &scancode);
-            if (n||scancode==0||scancode>=NUM_SCANCODES||evtype==EV_INVALID) {
-                printf("read_kb_event failed\n"); 
-            } else { // pass the kb event to main task 
-                // printf("evtype %d scancode %d\n", evtype, (int)scancode); 
+    //     while (1) {
+    //         n = read_kb_event(events, &evtype, &scancode);
+    //         if (n||scancode==0||scancode>=NUM_SCANCODES||evtype==EV_INVALID) {
+    //             printf("read_kb_event failed\n"); 
+    //         } else { // pass the kb event to main task 
+    //             // printf("evtype %d scancode %d\n", evtype, (int)scancode); 
                  
-                /* STUDENT_TODO: your code here */
-            }
-        }
-        exit(0); // shall never reach here
-    }
-    close(fds[1]); 
+    //             /* STUDENT_TODO: your code here */
+    //         }
+    //     }
+    //     exit(0); // shall never reach here
+    // }
+    // close(fds[1]); 
 
     // open the framebuffer device 
-    fb = open("/dev/??", 0); /* STUDENT_TODO: replace this */
+    fb = open("/dev/fb", 0); /* STUDENT_TODO: replace this */
     assert(fb>0); 
     
     // Configure fb hardware via procfs
@@ -295,6 +295,13 @@ void nes_flip_display()
 #else
      
     /* STUDENT_TODO: your code here */
+    n = lseek(fb, 0, SEEK_SET);
+    assert(n == 0);
+    n = write(fb, vtx, vtx_sz);
+    printf("nes_flip_display debug: write returned %d (expected %d)\n", n, vtx_sz);
+    if(n != vtx_sz) {
+        printf("nes_flip_display: failed to write to hw fb. fb %d sz %d ret %d\n", fb, vtx_sz, n);
+    }
 #endif
 }
 

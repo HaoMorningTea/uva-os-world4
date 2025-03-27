@@ -312,18 +312,18 @@ int filelseek(struct file *f, int offset, int whence) {
         newoff = offset; 
         break;
     case SEEK_CUR:
-        newoff = 0; /* STUDENT_TODO: replace this */
+        newoff = f->off + offset;; /* STUDENT_TODO: replace this */
         break; 
     case SEEK_END:  // "set file offset to EOF plus offset", i.e. offset shall <0
         if (offset > 0) { W("unsupported"); return -1;}
-        newoff = 0; /* STUDENT_TODO: replace this */
+        newoff = size + offset; /* STUDENT_TODO: replace this */
         break; 
     default:
         E("unrecog option");
         return -1; 
     }
 
-    if (1) /* STUDENT_TODO: replace this */
+    if (newoff < 0 || newoff >= size) /* STUDENT_TODO: replace this */
         {E("newoff %d out of bound", newoff); return -1;}
 
     f->off = newoff; 
@@ -346,6 +346,10 @@ int filewrite(struct file *f, uint64 addr, int n) {
         // project idea: implement this part to enable /dev/console
         if (f->major < 0 || f->major >= NDEV || !devsw[f->major].write)
             return -1;
+
+        // Debug print: verify which device is being written to.
+        //printf("filewrite: FD_DEVICE, f->major = %d, calling devsw[%d].write\n", f->major, f->major);
+
         ret = devsw[f->major].write(1/*userdst*/, addr, f->off, n, f->content);
         if (ret>0 && (f->major == FRAMEBUFFER || f->major == FRAMEBUFFER0))
             f->off += ret; 
@@ -434,11 +438,19 @@ int devfb_write(int user_src, uint64 src, int off, int n, void *content) {
     acquire(&mboxlock); 
     if (!the_fb.fb)
         goto out; 
-    len = 0; /* STUDENT_TODO: replace this */
-    if (either_copyin(0, 1, 0, 0) == -1) /* STUDENT_TODO: replace this */
-        goto out; 
+    len = n; /* STUDENT_TODO: replace this */
+    printf("devfb_write debug: the_fb.fb=%p, off=%d, n=%d, user_src=%d, src=0x%lx\n",
+           (void*)the_fb.fb, off, n, user_src, src);
+    // if (either_copyin(the_fb.fb + off, user_src, src, n) == -1) /* STUDENT_TODO: replace this */
+    //     goto out; 
+
+    int copy_ret = either_copyin((void *)((char *)the_fb.fb + off), user_src, src, n);
+    printf("devfb_write debug: either_copyin returned %d\n", copy_ret);
+    if (copy_ret == -1)
+        goto out;
+    
     ret = len;
-    __asm_flush_dcache_range(0, 0); /* STUDENT_TODO: replace this */
+    __asm_flush_dcache_range(the_fb.fb + off, the_fb.fb + off + n); /* STUDENT_TODO: replace this */
     // __asm_flush_dcache_range(the_fb.fb, the_fb.fb+len); // a bug that FL made. what would happen on display?
 out: 
     release(&mboxlock); 
@@ -468,7 +480,7 @@ int procfs_gen_content(int major, char *txtbuf, int sz) {
         len = snprintf(txtbuf, sz, 
             "%6d %6d %6d %6d %6d %6d %6d %6d %6d\n"
             "# %6s %6s %6s %6s %6s %6s %6s %6s %6s\n",
-            0,0,0,0, /* STUDENT_TODO: replace this */
+            the_fb.width, the_fb.height, the_fb.vwidth, the_fb.vheight, /* STUDENT_TODO: replace this */
             the_fb.scr_width, the_fb.scr_height, the_fb.pitch, the_fb.depth, the_fb.isrgb,
             "width","height","vwidth","vheigh",
             "swidth","sheigh","pitch","depth","isrgb"); 

@@ -8,19 +8,30 @@
 // return 0 on success
 // cf: kernel code: procfs_parse_fbctl()
 int config_fbctl(int w, int d, int vw, int vh, int offx, int offy) {
-    //char buf[LINESIZE];
-    // int n, 
-    int fbctl; 
+    char buf[LINESIZE];
+    int n, fbctl; 
 
     if ((fbctl = open("/proc/fbctl", O_RDWR)) <=0) return -1; 
 
      
     /* STUDENT_TODO: your code here */
+    {
+        sprintf(buf, "%d %d %d %d %d %d\n", w, d, vw, vh, offx, offy);
+        n = strlen(buf);
+        if (n <= 0) {
+            close(fbctl);
+            return -1;
+        }
+        if (write(fbctl, buf, n) < 0) {
+            close(fbctl);
+            return -1;
+        }
+    }
 
     // printf("write returns %d\n", n);
 
     close(fbctl);  // close it so flush the writes to the kernel
-    return 0; //!(n>0); 
+    return !(n>0); 
 }
 
 // 0 on success
@@ -54,6 +65,12 @@ int read_dispinfo(int dispinfo[MAX_DISP_ARGS], int *nargs) {
 
     // read a line from /proc/dispinfo to buf
     /* STUDENT_TODO: your code here */
+    n = read(dp, buf, LINESIZE - 1);
+    if(n < 0) {
+        close(dp);
+        return -1;
+    }
+    buf[n] = '\0';
 
     // parse the 1st line from /proc/dispinfo as a list of int args... 
     for (s = buf, *nargs=0; s < buf + n; s++) {
@@ -63,6 +80,15 @@ int read_dispinfo(int dispinfo[MAX_DISP_ARGS], int *nargs) {
              
             /* STUDENT_TODO: your code here */
             // printf("got arg %d\n", dispinfo[nargs]); // debugging
+            // Use strtol to parse the integer and update s accordingly.
+            int val = 0;
+            while (s < buf + n && (*s >= '0' && *s <= '9')) {
+                val = val * 10 + (*s - '0');
+                s++;
+            }
+            dispinfo[*nargs] = val;
+            (*nargs)++;
+            s--;;  // Adjust because the for-loop will increment s further.
         }
     }    
     // line 2 and later ignored 
