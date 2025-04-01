@@ -8,17 +8,22 @@
 // return 0 on success
 // cf: kernel code: procfs_parse_fbctl()
 int config_fbctl(int w, int d, int vw, int vh, int offx, int offy) {
-    //char buf[LINESIZE];
-    // int n, 
+    char buf[LINESIZE];
+    int n; 
     int fbctl; 
 
     if ((fbctl = open("/proc/fbctl", O_RDWR)) <=0) return -1; 
 
      
     /* STUDENT_TODO: your code here */
+    sprintf(buf, "%d %d %d %d %d %d\n", w, d, vw, vh, offx, offy);
+    n = strlen(buf);
+    if (write(fbctl, buf, n) != n) {
+        close(fbctl);
+        return -1;
+    }
 
-    // printf("write returns %d\n", n);
-
+    printf("write returns %d\n", n);
     close(fbctl);  // close it so flush the writes to the kernel
     return 0; //!(n>0); 
 }
@@ -54,6 +59,8 @@ int read_dispinfo(int dispinfo[MAX_DISP_ARGS], int *nargs) {
 
     // read a line from /proc/dispinfo to buf
     /* STUDENT_TODO: your code here */
+    n = read(dp, buf, LINESIZE - 1);
+
 
     // parse the 1st line from /proc/dispinfo as a list of int args... 
     for (s = buf, *nargs=0; s < buf + n; s++) {
