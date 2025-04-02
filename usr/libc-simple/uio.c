@@ -60,15 +60,26 @@ int read_dispinfo(int dispinfo[MAX_DISP_ARGS], int *nargs) {
     // read a line from /proc/dispinfo to buf
     /* STUDENT_TODO: your code here */
     n = read(dp, buf, LINESIZE - 1);
-
+    if (n <= 0) {
+        close(dp);
+        return -1;
+    }
+    buf[n] = 0; // null-terminate the string
+    // printf("read_dispinfo: %s\n", buf); // debugging
 
     // parse the 1st line from /proc/dispinfo as a list of int args... 
     for (s = buf, *nargs=0; s < buf + n; s++) {
         if (*s == '\n' || *s == '\0')
             break;
         if ('0' <= *s && *s <= '9') {  // reach the 1st char (e.g. '1') in a number (e.g. "123")
-             
             /* STUDENT_TODO: your code here */
+            dispinfo[*nargs] = atoi(s);
+            while (s < buf + n && '0' <= *s && *s <= '9')
+                s++;
+            (*nargs)++;
+            if (*nargs == MAX_DISP_ARGS) {
+                break;
+            }
             // printf("got arg %d\n", dispinfo[nargs]); // debugging
         }
     }    

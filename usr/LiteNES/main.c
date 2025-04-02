@@ -40,6 +40,20 @@ int main(int argc, char *argv[])
     // to the memory buffer
      
     /* STUDENT_TODO: your code here */
+    fd = open(argv[1], O_RDONLY);
+    if (fd < 0) {
+        fprintf(stderr, "open rom failed\n");
+        goto load;
+    }
+
+    int bytes_read = read(fd, rom, sizeof(rom));
+    if (bytes_read != sizeof(rom)){
+        fprintf(stderr, "read rom failed\n");
+        exit(1);
+    }
+
+    close(fd);
+
     
     printf("open rom...ok\n"); 
 load: 
