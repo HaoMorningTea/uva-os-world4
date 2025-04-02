@@ -114,6 +114,8 @@ void wait_for_frame()
         case EV_KEYUP:
             assert(ev.scancode<NUM_SCANCODES); 
             // printf("key code %d %s\n", ev.scancode, ev.type == EV_KEYDOWN ? "down":"up");
+            //printf("DEBUG: Received event: %s, scancode = 0x%02x\n",
+                //ev.type == EV_KEYDOWN ? "KEYDOWN" : "KEYUP", ev.scancode);
             /* STUDENT_TODO: your code here */
             if (ev.type == EV_KEYDOWN) {
                 key_states[ev.scancode] = EV_KEYDOWN;
@@ -239,7 +241,7 @@ void nes_hal_init() {
                 printf("read_kb_event failed\n"); 
             } else { // pass the kb event to main task 
                 // printf("evtype %d scancode %d\n", evtype, (int)scancode); 
-                 
+                //printf("DEBUG: Keyboard task read: %s, scancode=%d\n", evtype == KEYDOWN ? "KEYDOWN" : "KEYUP", scancode); 
                 /* STUDENT_TODO: your code here */
                 struct event ev;
                 ev.type = (evtype == KEYDOWN) ? EV_KEYDOWN : EV_KEYUP;
@@ -319,8 +321,8 @@ void nes_flip_display()
 #endif
 }
 
-/* Query a button's state. b: the button idx. 
-   Returns 1 if button #b is pressed. */
+// /* Query a button's state. b: the button idx. 
+//    Returns 1 if button #b is pressed. */
 // int nes_key_state(int b)
 // {
 //     switch (b)
@@ -328,52 +330,95 @@ void nes_flip_display()
 //         case 0: // On / Off
 //             return 1;
 //         case 1: // A  (k)
-//             return 0; /* STUDENT_TODO: replace this */
+//             return (key_states[14] == EV_KEYDOWN) ? 1 : 0; /* STUDENT_TODO: replaced */
 //         case 2: // B  (j)
-//             return 0; /* STUDENT_TODO: replace this */
+//             return (key_states[13] == EV_KEYDOWN) ? 1 : 0; /* STUDENT_TODO: replaced */
 //         case 3: // SELECT (u)
-//             return 0; /* STUDENT_TODO: replace this */
+//             return (key_states[24] == EV_KEYDOWN) ? 1 : 0; /* STUDENT_TODO: replaced */
 //         case 4: // START  (i)
-//             return 0; /* STUDENT_TODO: replace this */
+//             return (key_states[12] == EV_KEYDOWN) ? 1 : 0; /* STUDENT_TODO: replaced */
 //         case 5: // UP  (w)
-//             return 0; /* STUDENT_TODO: replace this */
+//             return (key_states[26] == EV_KEYDOWN) ? 1 : 0; /* STUDENT_TODO: replaced */
 //         case 6: // DOWN (s)
-//             return 0; /* STUDENT_TODO: replace this */
+//             return (key_states[22] == EV_KEYDOWN) ? 1 : 0; /* STUDENT_TODO: replaced */
 //         case 7: // LEFT (a)
-//             return 0; /* STUDENT_TODO: replace this */
+//             return (key_states[4] == EV_KEYDOWN) ? 1 : 0; /* STUDENT_TODO: replaced */
 //         case 8: // RIGHT (d)
-//             return 0; /* STUDENT_TODO: replace this */
+//             return (key_states[7] == EV_KEYDOWN) ? 1 : 0; /* STUDENT_TODO: replaced */
 //         default:
 //             return 1;
 //     }
 // }
 
-int nes_key_state(int b) {
-    static const int scan_codes[] = {
-        0,    // 0: On/Off
-        0x1F, // 1: A (k)
-        0x3A, // 2: B (j)
-        0x38, // 3: SELECT (u)
-        0x1C, // 4: START (i)
-        0x11, // 5: UP (w)
-        0x1F, // 6: DOWN (s)
-        0x1E, // 7: LEFT (a)
-        0x20  // 8: RIGHT (d)
-    };
-
-    if (b < 0 || b >= sizeof(scan_codes)/sizeof(scan_codes[0])) {
-        return 0;
+int nes_key_state(int b)
+{
+    int state = 0;
+    switch (b)
+    {        
+        case 0: // On / Off
+            state = 1;
+            break;
+        case 1: // A  (k)
+            state = (key_states[14] == EV_KEYDOWN) ? 1 : 0; /* Using USB HID scancode for 'k': 0x0E (14) */
+            break;
+        case 2: // B  (j)
+            state = (key_states[13] == EV_KEYDOWN) ? 1 : 0; /* 'j': 0x0D (13) */
+            break;
+        case 3: // SELECT (u)
+            state = (key_states[24] == EV_KEYDOWN) ? 1 : 0; /* 'u': 0x18 (24) */
+            break;
+        case 4: // START  (i)
+            state = (key_states[12] == EV_KEYDOWN) ? 1 : 0; /* 'i': 0x0C (12) */
+            break;
+        case 5: // UP  (w)
+            state = (key_states[26] == EV_KEYDOWN) ? 1 : 0; /* 'w': 0x1A (26) */
+            break;
+        case 6: // DOWN (s)
+            state = (key_states[22] == EV_KEYDOWN) ? 1 : 0; /* 's': 0x16 (22) */
+            break;
+        case 7: // LEFT (a)
+            state = (key_states[4]  == EV_KEYDOWN) ? 1 : 0; /* 'a': 0x04 (4) */
+            break;
+        case 8: // RIGHT (d)
+            state = (key_states[7]  == EV_KEYDOWN) ? 1 : 0; /* 'd': 0x07 (7) */
+            break;
+        default:
+            state = 1;
+            break;
     }
+    // if (state == 1) {
+    //     printf("DEBUG: nes_key_state: Button %d, state %d\n", b, state);
+    // }
 
-    if (b == 0) {
-        return 1;
-    }
-
-    int scancode = scan_codes[b];
-    if (scancode < 0 || scancode >= NUM_SCANCODES) {
-        return 0;
-    }
-
-    return key_states[scancode];
+    return state;
 }
+
+// int nes_key_state(int b) {
+//     static const int scan_codes[] = {
+//         0,    // 0: On/Off
+//         0x1F, // 1: A (k)
+//         0x3A, // 2: B (j)
+//         0x38, // 3: SELECT (u)
+//         0x1C, // 4: START (i)
+//         0x11, // 5: UP (w)
+//         0x1F, // 6: DOWN (s)
+//         0x1E, // 7: LEFT (a)
+//         0x20  // 8: RIGHT (d)
+//     };
+
+//     if (b < 0 || b >= sizeof(scan_codes)/sizeof(scan_codes[0])) {
+//         return 0;
+//     }
+
+//     if (b == 0) {
+//         return 1;
+//     }
+
+//     int scancode = scan_codes[b];
+//     if (scancode < 0 || scancode >= NUM_SCANCODES) {
+//         return 0;
+//     }
+
+//     return key_states[scancode];
+// }
 
